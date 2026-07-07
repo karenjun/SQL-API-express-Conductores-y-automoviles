@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Conductores y Automóviles</title>
+
+</head>
+
+
+
+
+<body>
+  <h1>API Conductores y Automóviles</h1>
+
+ <!-- Botones básicos -->
+  <button onclick="fetchData('conductores')">Ver Conductores</button>
+  <button onclick="fetchData('automoviles')">Ver Automóviles</button>
+  <button onclick="fetchData('solitos')">Ver Solitos</button>
+
+    <!-- Buscador de auto por patente -->
+    <h2>Buscar Auto por Patente</h2>
+    <input type="text" id="patenteInput" placeholder="Ingresa patente">
+    <button onclick="fetchAuto()">Buscar</button>
+
+    <!-- Buscador de conductores sin auto por edad -->
+    <h2>Buscar Conductores sin Auto por Edad</h2>
+    <input type="number" id="edadInput" placeholder="Ingresa edad">
+    <button onclick="fetchConductoresSinAuto()">Buscar</button>
+
+
+
+<!-- Contenedor para mostrar los resultados, cambié de pre a div porque tuve problemas... -->
+  <div id="output"></div>
+
+<!-- Script especial para mostrar resultados de una manera ordenada, como listas. -->
+
+    <script>
+    // ✅ Función principal para traer datos del backend y mostrarlos
+    async function fetchData(endpoint) {
+      console.log("Botón presionado:", endpoint); // Debug: confirma que el botón dispara la función
+
+      try {
+        const res = await fetch(`http://localhost:3000/${endpoint}`);
+        if (!res.ok) {
+          throw new Error(`Error ${res.status}: ${res.statusText}`);
+        }
+        const data = await res.json();
+        console.log("Datos recibidos:", data); // Debug: confirma que llegan datos
+
+        let html = "";
+        if (endpoint === "conductores") {
+          html = "<h2>Conductores</h2><ul>";
+          data.forEach(c => {
+            html += `<li>${c.nombre} – ${c.edad} años</li>`;
+          });
+          html += "</ul>";
+        } else if (endpoint === "automoviles") {
+          html = "<h2>Automóviles</h2><ul>";
+          data.forEach(a => {
+            html += `<li>${a.marca} – Patente: ${a.patente} (Conductor: ${a.nombre_conductor})</li>`;
+          });
+          html += "</ul>";
+        } else if (endpoint === "solitos") {
+          html = "<h2>Conductores sin auto</h2><ul>";
+          data.conductores.forEach(c => {
+            html += `<li>${c.nombre} – ${c.edad} años</li>`;
+          });
+          html += "</ul><h2>Autos sin conductor</h2><ul>";
+          data.automoviles.forEach(a => {
+            html += `<li>${a.marca} – Patente: ${a.patente}</li>`;
+          });
+          html += "</ul>";
+        } else {
+          html = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+        }
+
+        document.getElementById('output').innerHTML = html;
+      } catch (error) {
+        console.error("Error al traer datos:", error);
+        document.getElementById('output').innerHTML =
+          `<p style="color:red;">No se pudo cargar ${endpoint}: ${error.message}</p>`;
+          
+      }
+    }
+
+// 🔎 Buscar auto por patente
+    async function fetchAuto() {
+  const valor = document.getElementById('patenteInput').value;
+  let url;
+  if (valor.length <= 2) {
+    url = `http://localhost:3000/auto?iniciopatente=${valor}`;
+  } else {
+    url = `http://localhost:3000/auto?patente=${valor}`;
+  }
+
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!res.ok) {
+      document.getElementById('output').innerHTML =
+        `<p style="color:red;">${data.error}</p>`;
+      return;
+    }
+    let html = "<h2>Resultado Auto</h2><ul>";
+    data.forEach(a => {
+      html += `<li>${a.marca} – Patente: ${a.patente} (Conductor: ${a.nombre_conductor}, Edad: ${a.edad})</li>`;
+    });
+    html += "</ul>";
+    document.getElementById('output').innerHTML = html;
+  } catch (error) {
+    document.getElementById('output').innerHTML =
+      `<p style="color:red;">Error de conexión: ${error.message}</p>`;
+  }
+}
+
+
+    // 🔎 Buscar conductores sin auto por edad
+    async function fetchConductoresSinAuto() {
+      const edad = document.getElementById('edadInput').value;
+      try {
+        const res = await fetch(`http://localhost:3000/conductoressinauto?edad=${edad}`);
+        const data = await res.json();
+        if (!res.ok) {
+          document.getElementById('output').innerHTML =
+            `<p style="color:red;">${data.error}</p>`;
+          return;
+        }
+        let html = "<h2>Conductores sin auto</h2><ul>";
+        data.forEach(c => {
+          html += `<li>${c.nombre} – ${c.edad} años</li>`;
+        });
+        html += "</ul>";
+        document.getElementById('output').innerHTML = html;
+      } catch (error) {
+        document.getElementById('output').innerHTML =
+          `<p style="color:red;">Error de conexión: ${error.message}</p>`;
+      }
+    }
+
+
+  </script>
+
+
+
+</body>
+
+</html>
